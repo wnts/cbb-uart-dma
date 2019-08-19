@@ -59,16 +59,9 @@ void main_task_func(void *argument)
     uint8_t  foo[64];
     uint16_t i = 0;
     cbb_uart_dma_init();
-    for(i = 0; i < 5; i++)
-    {
-        sprintf(foo, "Hello, World! (%u)\n", i);
-        //        HAL_UART_Transmit_DMA(&huart2, foo, strlen(foo) + 1);
-        cbb_uart_dma_write(dma_buffer, foo, strlen(foo) + 1);
-        vTaskDelay(pdMS_TO_TICKS(1000));
-    }
     while(true)
     {
-        sprintf(foo, "Hello, World! (%u)\n", i);
+        sprintf(foo, "%u\n", i);
         cbb_uart_dma_write(dma_buffer, foo, strlen(foo) + 1);
         i++;
     }

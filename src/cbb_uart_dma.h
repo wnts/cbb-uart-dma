@@ -24,7 +24,6 @@ typedef struct
 } cbb_uart_dma_buffer_t;
 
 extern DMA_HandleTypeDef dma_handle;
-extern bool              dma_transfer_ongoing;
 
 cbb_uart_dma_buffer_t *cbb_uart_dma_init(void);
 static uint16_t        cbb_uart_dma_get_occupancy(cbb_uart_dma_buffer_t *buffer);

@@ -18,7 +18,6 @@ static cbb_uart_dma_buffer_t _dma_buffer = { 0 };
 static StaticSemaphore_t     cbb_uart_dma_mutex_controldata;
 static StaticSemaphore_t     cbb_uart_dma_semaphore_non_empty_controldata;
 static uint8_t               cbb_uart_dma_data[CBB_UART_DMA_BUFFER_LEN];
-bool                         dma_transfer_ongoing = false;
 
 cbb_uart_dma_buffer_t *cbb_uart_dma_init(void)
 {
@@ -37,8 +36,9 @@ cbb_uart_dma_buffer_t *cbb_uart_dma_init(void)
     dma_init.MemoryOrM2MDstDataSize = LL_DMA_MDATAALIGN_BYTE;
     dma_init.MemoryOrM2MDstIncMode  = LL_DMA_MEMORY_INCREMENT;
     LL_DMA_Init(DMA1, CBB_UART_DMA_STREAM, &dma_init);
+    LL_DMA_EnableIT_TC(CBB_UART_DMA_INSTANCE, CBB_UART_DMA_STREAM);
     HAL_NVIC_EnableIRQ(DMA1_Stream6_IRQn);
-    HAL_NVIC_EnableIRQ(USART2_IRQn);
+    //    HAL_NVIC_EnableIRQ(USART2_IRQn);
 
     _dma_buffer.mutex               = xSemaphoreCreateMutexStatic(&cbb_uart_dma_mutex_controldata);
     _dma_buffer.semaphore_non_empty = xSemaphoreCreateBinaryStatic(&cbb_uart_dma_semaphore_non_empty_controldata);
@@ -65,13 +65,17 @@ static uint16_t cbb_uart_dma_get_free(cbb_uart_dma_buffer_t *buffer)
 {
     uint16_t read = buffer->dma_transfer_start + buffer->dma_transfer_size - LL_DMA_GetDataLength(CBB_UART_DMA_INSTANCE, CBB_UART_DMA_STREAM);
 
-    if(read == buffer->write)
-        return buffer->len;
-
     if(read > buffer->write)
-        return read - buffer->write;
+    {
+    	if(buffer->write == read - 1)
+    		return 0;
+    	else
+			return read - buffer->write;
+    }
     else
-        return (uint32_t)buffer->len + read - buffer->write;
+    {
+			return (uint32_t)buffer->len + (uint32_t)read - (uint32_t)buffer->write;
+    }
 }
 
 void cbb_uart_dma_write(cbb_uart_dma_buffer_t *buffer, const uint8_t *data, uint16_t len)
@@ -80,16 +84,21 @@ void cbb_uart_dma_write(cbb_uart_dma_buffer_t *buffer, const uint8_t *data, uint
     {
         uint16_t          data_left  = len;
         HAL_StatusTypeDef hal_status = HAL_OK;
+        bool dma_transfer_ongoing = false;
 
         while(data_left > 0)
         {
             uint16_t num_polls = 0;
-            LL_DMA_DisableIT_TC(CBB_UART_DMA_INSTANCE, CBB_UART_DMA_STREAM);
-            LL_DMA_DisableStream(DMA1, CBB_UART_DMA_STREAM);
-            while(LL_DMA_IsEnabledStream(CBB_UART_DMA_INSTANCE, CBB_UART_DMA_STREAM) && LL_USART_IsActiveFlag_TXE(huart2.Instance))
+            if(LL_USART_IsEnabledDMAReq_TX(huart2.Instance))
             {
-                num_polls++;
+                LL_USART_DisableDMAReq_TX(huart2.Instance);
+                LL_DMA_DisableStream(CBB_UART_DMA_INSTANCE, CBB_UART_DMA_STREAM);
+                dma_transfer_ongoing = true;
             }
+			while(LL_DMA_IsEnabledStream(CBB_UART_DMA_INSTANCE, CBB_UART_DMA_STREAM))
+				;
+			while(!LL_USART_IsActiveFlag_TXE(huart2.Instance))
+				;
             uint16_t rem  = 0;
             uint16_t free = cbb_uart_dma_get_free(buffer);
             if(free == 0)
@@ -110,7 +119,7 @@ void cbb_uart_dma_write(cbb_uart_dma_buffer_t *buffer, const uint8_t *data, uint
             {
                 memcpy(&buffer->data[buffer->write], data, bytes_to_write);
             }
-            buffer->write = (buffer->write + len) % buffer->len;
+            buffer->write = (buffer->write + bytes_to_write - 1) % buffer->len;
             data_left -= bytes_to_write;
             if(buffer->write > read)
             {
@@ -119,14 +128,10 @@ void cbb_uart_dma_write(cbb_uart_dma_buffer_t *buffer, const uint8_t *data, uint
                 if(dma_transfer_ongoing)
                     dma_transfer_size += buffer->dma_transfer_size - LL_DMA_GetDataLength(CBB_UART_DMA_INSTANCE, CBB_UART_DMA_STREAM);
                 uint16_t dma_transfer_start = read;
-                LL_DMA_EnableIT_TC(CBB_UART_DMA_INSTANCE, CBB_UART_DMA_STREAM);
-                LL_DMA_SetMemoryAddress(CBB_UART_DMA_INSTANCE, CBB_UART_DMA_STREAM, (uint32_t)&buffer->data[dma_transfer_start]);
+                LL_DMA_SetMemoryAddress(CBB_UART_DMA_INSTANCE, CBB_UART_DMA_STREAM, (uint32_t)(&buffer->data[dma_transfer_start]));
                 LL_DMA_SetDataLength(CBB_UART_DMA_INSTANCE, CBB_UART_DMA_STREAM, dma_transfer_size);
-                portENTER_CRITICAL();
-                LL_DMA_EnableStream(CBB_UART_DMA_INSTANCE, CBB_UART_DMA_STREAM);
+				LL_DMA_EnableStream(CBB_UART_DMA_INSTANCE, CBB_UART_DMA_STREAM);
                 LL_USART_EnableDMAReq_TX(huart2.Instance);
-                dma_transfer_ongoing = true;
-                portEXIT_CRITICAL();
                 buffer->dma_transfer_start = dma_transfer_start;
                 buffer->dma_transfer_size  = dma_transfer_size;
             }

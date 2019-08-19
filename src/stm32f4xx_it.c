@@ -46,7 +46,6 @@ void DMA1_Stream6_IRQHandler(void)
 {
     if(LL_DMA_IsActiveFlag_TC6(CBB_UART_DMA_INSTANCE))
     {
-        dma_transfer_ongoing = false;
         LL_DMA_ClearFlag_TC6(CBB_UART_DMA_INSTANCE);
         LL_USART_DisableDMAReq_TX(huart2.Instance);
     }
