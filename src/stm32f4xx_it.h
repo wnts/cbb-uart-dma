@@ -2,8 +2,8 @@
 #define __STM32F4xx_IT_H
 
 #ifdef __cplusplus
- extern "C" {
-#endif 
+extern "C" {
+#endif
 
 void NMI_Handler(void);
 void HardFault_Handler(void);
@@ -18,4 +18,3 @@ void SysTick_Handler(void);
 #endif
 
 #endif /* __STM32F4xx_IT_H */
-

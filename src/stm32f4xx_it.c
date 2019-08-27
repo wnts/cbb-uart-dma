@@ -48,14 +48,14 @@ void DebugMon_Handler(void)
 
 void DMA1_Stream6_IRQHandler(void)
 {
-	if(LL_DMA_IsActiveFlag_TE6(CBB_UART_DMA_INSTANCE))
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
-	cbb_uart_dma_end_of_dma_transfer_callback(dma_buffer, true);
+    if(LL_DMA_IsActiveFlag_TE6(CBB_UART_DMA_INSTANCE))
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+    cbb_uart_dma_end_of_dma_transfer_callback(dma_buffer, true);
 }
 void USART2_IRQHandler(void)
 {
-	if(LL_USART_IsActiveFlag_FE(huart2.Instance) || LL_USART_IsActiveFlag_ORE(huart2.Instance))
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+    if(LL_USART_IsActiveFlag_FE(huart2.Instance) || LL_USART_IsActiveFlag_ORE(huart2.Instance))
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
 }
 void SysTick_Handler(void)
 {

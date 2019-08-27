@@ -14,7 +14,7 @@ void MX_FREERTOS_Init(void);
 
 int main(void)
 {
-	HAL_Init();
+    HAL_Init();
     SystemClock_Config();
     MX_GPIO_Init();
     MX_USART2_UART_Init();
