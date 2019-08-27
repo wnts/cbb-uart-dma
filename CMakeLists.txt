@@ -10,7 +10,7 @@ set(C_SOURCES
 	  src/freertos.c
 	  src/cbb_uart_dma.c
 	  src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_hal.c
-      src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_hal_cortex.c
+    src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_hal_cortex.c
 	  src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_hal_rcc.c
 	  src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_hal_rcc_ex.c
 	  src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_hal_pwr.c
@@ -29,34 +29,33 @@ set(ASM_SOURCES src/startup_stm32f411xe.s)
 
 
 set(ARCH_FLAGS  -mcpu=cortex-m4
-				-mthumb
-	            -mfpu=fpv4-sp-d16
-				-mfloat-abi=hard)
+				        -mthumb
+	              -mfpu=fpv4-sp-d16
+				        -mfloat-abi=hard)
 set(LDSCRIPT STM32F411RETx_FLASH.ld)
 
 include_directories(src/
-					src/drivers/STM32F4xx_HAL_Driver
-					src/drivers/CMSIS/Device/ST/STM32F4xx/Include
-					src/drivers/CMSIS/Include
-					src/FreeRTOS/CMSIS_RTOS
-					src/FreeRTOS/include
-					src/FreeRTOS/portable/GCC/ARM_CM4F)
+					          src/drivers/STM32F4xx_HAL_Driver
+		          			src/drivers/CMSIS/Device/ST/STM32F4xx/Include
+				          	src/drivers/CMSIS/Include
+          					src/FreeRTOS/CMSIS_RTOS
+				          	src/FreeRTOS/include
+          					src/FreeRTOS/portable/GCC/ARM_CM4F)
 add_definitions(-DSTM32F411xE
-				-DUSE_HAL_DRIVER
-				-DUSE_FULL_LL_DRIVER)
+			         	-DUSE_HAL_DRIVER
+				        -DUSE_FULL_LL_DRIVER)
 
 add_compile_options(${ARCH_FLAGS})
 add_link_options(${ARCH_FLAGS})
 add_compile_options(-fdata-sections
-					-ffunction-sections)
+					          -ffunction-sections)
 
 add_link_options(-specs=nano.specs
                  -specs=nosys.specs
-				 -T${CMAKE_SOURCE_DIR}/${LDSCRIPT}
-				 -Wl,-Map=${CMAKE_BINARY_DIR}/${PROJECT_NAME}.map,--cref
-				 -Wl,--gc-sections)
+				         -T${CMAKE_SOURCE_DIR}/${LDSCRIPT}
+				         -Wl,-Map=${CMAKE_BINARY_DIR}/${PROJECT_NAME}.map,--cref
+				         -Wl,--gc-sections)
 if(CMAKE_BUILD_TYPE MATCHES Debug)
-	message(STATUS foo)
 	add_compile_options(-g -O0)
 	add_link_options(-Wl,--undefined=uxTopUsedPriority)
 	set(C_SOURCES ${C_SOURCES} contrib/FreeRTOS-openocd.c)

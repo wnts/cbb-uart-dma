@@ -63,6 +63,8 @@ void main_task_func(void *argument)
     {
         sprintf(foo, "%u\n", i);
         cbb_uart_dma_write(dma_buffer, foo, strlen(foo) + 1);
+//        if(i == 227)
+//        	__asm__("bkpt");
         i++;
     }
 }
