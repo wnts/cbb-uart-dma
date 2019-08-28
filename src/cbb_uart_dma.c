@@ -139,8 +139,6 @@ void cbb_uart_dma_end_of_dma_transfer_callback(cbb_uart_dma_buffer_t *buffer, bo
     if(buffer->dma_transfer_start + buffer->dma_transfer_size < buffer->len)
     {
         buffer->read              = buffer->dma_transfer_start + buffer->dma_transfer_size;
-        if(buffer->read >= buffer->len - 1)
-        	__asm__("bkpt");
         buffer->dma_transfer_size = 0;
         buffer->dma_transfer_ongoing = 0;
     }
