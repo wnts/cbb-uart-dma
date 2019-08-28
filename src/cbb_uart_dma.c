@@ -46,7 +46,9 @@ cbb_uart_dma_buffer_t *cbb_uart_dma_init(void)
     LL_DMA_Init(DMA1, CBB_UART_DMA_STREAM, &dma_init);
     LL_DMA_EnableIT_TC(CBB_UART_DMA_INSTANCE, CBB_UART_DMA_STREAM);
     HAL_NVIC_EnableIRQ(DMA1_Stream6_IRQn);
+    HAL_NVIC_EnableIRQ(USART2_IRQn);
     HAL_NVIC_SetPriority(DMA1_Stream6_IRQn, 6, 2);
+    HAL_NVIC_SetPriority(USART2_IRQn, 7, 2);
 
     _dma_buffer.mutex               = xSemaphoreCreateMutexStatic(&cbb_uart_dma_mutex_controldata);
     _dma_buffer.semaphore_non_empty = xSemaphoreCreateBinaryStatic(&cbb_uart_dma_semaphore_non_empty_controldata);
@@ -142,6 +144,7 @@ void cbb_uart_dma_end_of_dma_transfer_callback(cbb_uart_dma_buffer_t *buffer, bo
     {
         buffer->read              = buffer->dma_transfer_start + buffer->dma_transfer_size;
         buffer->dma_transfer_size = 0;
+        buffer->dma_transfer_ongoing = 0;
     }
     /* Situation 2: non-wrapping DMA transfer ending AT the end of the linear buffer OR wrapping DMA transfer ended at the end of the linear buffer. */
     else if(buffer->dma_transfer_start + buffer->dma_transfer_size >= buffer->len)
@@ -162,6 +165,7 @@ void cbb_uart_dma_end_of_dma_transfer_callback(cbb_uart_dma_buffer_t *buffer, bo
         else /* non-wrapping transfer ending AT end of the linear buffer */
         {
             buffer->dma_transfer_size = 0;
+            buffer->dma_transfer_ongoing = false;
         }
     }
     if(buffer->dma_transfer_blocking)
