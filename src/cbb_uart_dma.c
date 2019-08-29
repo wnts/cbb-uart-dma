@@ -9,7 +9,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-#define CBB_UART_DMA_BUFFER_LEN 1024
+#define CBB_UART_DMA_BUFFER_LEN 64
 
 DMA_HandleTypeDef dma_handle;
 
@@ -113,12 +113,13 @@ void cbb_uart_dma_write(cbb_uart_dma_buffer_t *buffer, const uint8_t *data, uint
         free = cbb_uart_dma_get_free(buffer);
         if(len > free)
         {
+            uint16_t original_len = buffer->dma_transfer_size;
             // Resume dma_transfer (blocking) with new length of len-free bytes
             cbb_uart_dma_transfer_resume(buffer, len - free, 0, true, false);
             // copy 'len' bytes into the buffer.
             cbb_uart_dma_copy_into(buffer, data, len);
-            // Start a new DMA transfer of 'len' bytes.
-            cbb_uart_dma_transfer_start(buffer, len, false, false);
+            // Resum DMA transfer with increment equal to length of newly copied buffer
+            cbb_uart_dma_transfer_resume(buffer, original_len + free, 0, false, false);
         }
         else
         {
@@ -138,8 +139,8 @@ void cbb_uart_dma_end_of_dma_transfer_callback(cbb_uart_dma_buffer_t *buffer, bo
     /* Situation 1: non-wrapping DMA transfer ending BEFORE the end of the linear buffer */
     if(buffer->dma_transfer_start + buffer->dma_transfer_size < buffer->len)
     {
-        buffer->read              = buffer->dma_transfer_start + buffer->dma_transfer_size;
-        buffer->dma_transfer_size = 0;
+        buffer->read                 = buffer->dma_transfer_start + buffer->dma_transfer_size;
+        buffer->dma_transfer_size    = 0;
         buffer->dma_transfer_ongoing = 0;
     }
     /* Situation 2: non-wrapping DMA transfer ending AT the end of the linear buffer OR wrapping DMA transfer ended at the end of the linear buffer. */
@@ -160,7 +161,7 @@ void cbb_uart_dma_end_of_dma_transfer_callback(cbb_uart_dma_buffer_t *buffer, bo
         }
         else /* non-wrapping transfer ending AT end of the linear buffer */
         {
-            buffer->dma_transfer_size = 0;
+            buffer->dma_transfer_size    = 0;
             buffer->dma_transfer_ongoing = false;
         }
     }
@@ -214,17 +215,18 @@ void cbb_uart_dma_transfer_pause(cbb_uart_dma_buffer_t *buffer)
     }
     else /* Transfer interrupted before it's end, update read pointer */
     {
-    	/* Situation 1: non-wrapping transfer OR second part (after the wrap) of wrapping dma transfer */
-    	if(buffer->dma_transfer_start + buffer->dma_transfer_size < buffer->len)
-    	{
-			buffer->read = buffer->dma_transfer_start + buffer->dma_transfer_size - LL_DMA_GetDataLength(CBB_UART_DMA_INSTANCE, CBB_UART_DMA_STREAM);
-			buffer->dma_transfer_size = LL_DMA_GetDataLength(CBB_UART_DMA_INSTANCE, CBB_UART_DMA_STREAM);
-    	}
-    	else /* Situation 2: first part of wrapping dma transfer */
-    	{
-    		buffer->read = buffer->read + (buffer->len - buffer->dma_transfer_start - LL_DMA_GetDataLength(CBB_UART_DMA_INSTANCE, CBB_UART_DMA_STREAM));
-    		buffer->dma_transfer_size -= buffer->len - buffer->dma_transfer_start - LL_DMA_GetDataLength(CBB_UART_DMA_INSTANCE, CBB_UART_DMA_STREAM);
-    	}
+        /* Situation 1: non-wrapping transfer OR second part (after the wrap) of wrapping dma transfer */
+        if(buffer->dma_transfer_start + buffer->dma_transfer_size < buffer->len)
+        {
+            buffer->read = buffer->dma_transfer_start + buffer->dma_transfer_size - LL_DMA_GetDataLength(CBB_UART_DMA_INSTANCE, CBB_UART_DMA_STREAM);
+            buffer->dma_transfer_size = LL_DMA_GetDataLength(CBB_UART_DMA_INSTANCE, CBB_UART_DMA_STREAM);
+        }
+        else /* Situation 2: first part of wrapping dma transfer */
+        {
+            buffer->read
+                = buffer->read + (buffer->len - buffer->dma_transfer_start - LL_DMA_GetDataLength(CBB_UART_DMA_INSTANCE, CBB_UART_DMA_STREAM));
+            buffer->dma_transfer_size -= buffer->len - buffer->dma_transfer_start - LL_DMA_GetDataLength(CBB_UART_DMA_INSTANCE, CBB_UART_DMA_STREAM);
+        }
     }
     buffer->dma_transfer_ongoing = false;
     LL_DMA_ClearFlag_HT6(CBB_UART_DMA_INSTANCE);
@@ -265,7 +267,7 @@ void cbb_uart_dma_transfer_resume(cbb_uart_dma_buffer_t *buffer, uint16_t new_le
 
 void cbb_uart_dma_transfer_start(cbb_uart_dma_buffer_t *buffer, uint16_t length, bool blocking, bool called_from_isr)
 {
-	uint16_t actual_length = 0;
+    uint16_t actual_length       = 0;
     buffer->dma_transfer_ongoing = true;
     buffer->dma_transfer_start   = buffer->read;
     buffer->dma_transfer_size    = length;
@@ -273,9 +275,9 @@ void cbb_uart_dma_transfer_start(cbb_uart_dma_buffer_t *buffer, uint16_t length,
         buffer->dma_transfer_blocking = blocking;
     LL_DMA_SetMemoryAddress(CBB_UART_DMA_INSTANCE, CBB_UART_DMA_STREAM, (uint32_t)&buffer->data[buffer->read]);
     if(length <= buffer->len - buffer->read)
-    	actual_length = length;
+        actual_length = length;
     else
-    	actual_length = buffer->len - buffer->read;
+        actual_length = buffer->len - buffer->read;
     LL_DMA_SetDataLength(CBB_UART_DMA_INSTANCE, CBB_UART_DMA_STREAM, actual_length);
     LL_DMA_EnableStream(CBB_UART_DMA_INSTANCE, CBB_UART_DMA_STREAM);
     LL_DMA_EnableIT_TC(CBB_UART_DMA_INSTANCE, CBB_UART_DMA_STREAM);

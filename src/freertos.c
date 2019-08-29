@@ -7,12 +7,19 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
+
+#define NUM_TASKS 3
+
+TaskHandle_t tasks[NUM_TASKS];
+StackType_t  task_stacks[NUM_TASKS * configMINIMAL_STACK_SIZE];
+StaticTask_t tasks_controldata[NUM_TASKS];
 
 TaskHandle_t main_task;
 StackType_t  main_task_stack[configMINIMAL_STACK_SIZE];
 StaticTask_t main_task_controldata;
 
-void main_task_func(void *argument);
+void task_func(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -45,24 +52,31 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackTyp
   */
 void MX_FREERTOS_Init(void)
 {
-    main_task = xTaskCreateStatic(main_task_func, "main task", sizeof(main_task_stack) / sizeof(StackType_t), NULL, 1, main_task_stack,
-                                  &main_task_controldata);
+    for(uint8_t i = 0; i < NUM_TASKS; i++)
+    {
+        char task_name[configMAX_TASK_NAME_LEN + 1];
+
+        snprintf(task_name, sizeof(task_name), "task%02d", i);
+        tasks[i] = xTaskCreateStatic(task_func, task_name, (sizeof(task_stacks) / NUM_TASKS) / sizeof(StackType_t), (void const *)i, i,
+                                     &task_stacks[i * configMINIMAL_STACK_SIZE], &tasks_controldata[i]);
+    }
 }
 
-/**
-  * @brief  Function implementing the main_task thread.
-  * @param  argument: Not used 
-  * @retval None
-  */
-void main_task_func(void *argument)
+void task_func(void *argument)
 {
-    uint8_t  foo[64];
-    uint32_t i = 0;
-    cbb_uart_dma_init();
+    uint32_t    task_id   = (uint32_t)argument;
+    const char *task_name = pcTaskGetName(NULL);
+    char        data[32]  = { 0 };
+
+    snprintf(data, sizeof(data), "%s\n", task_name);
+    cbb_uart_dma_write(dma_buffer, data, strlen(data));
     while(true)
     {
-        sprintf(foo, "%u\n", i);
-        cbb_uart_dma_write(dma_buffer, foo, strlen(foo) + 1);
-        i++;
+        for(uint8_t i = 0; i < 10; i++)
+        {
+            snprintf(data, sizeof(data), "%s: %u\n", task_name, i);
+            cbb_uart_dma_write(dma_buffer, data, strlen(data));
+        }
+        vTaskSuspend(NULL);
     }
 }
