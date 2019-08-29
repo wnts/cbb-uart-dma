@@ -57,13 +57,12 @@ void MX_FREERTOS_Init(void)
 void main_task_func(void *argument)
 {
     uint8_t  foo[64];
-    uint16_t i = 0;
+    uint32_t i = 0;
     cbb_uart_dma_init();
     while(true)
     {
         sprintf(foo, "%u\n", i);
         cbb_uart_dma_write(dma_buffer, foo, strlen(foo) + 1);
         i++;
-        vTaskDelay(pdMS_TO_TICKS(1));
     }
 }

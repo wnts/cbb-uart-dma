@@ -17,7 +17,6 @@ set(C_SOURCES
 	  src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_hal_gpio.c
 	  src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_hal_usart.c
 	  src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_hal_uart.c
-	  src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_hal_dma.c
 	  src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_ll_dma.c
 	  src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_ll_usart.c
 	  src/FreeRTOS/list.c
