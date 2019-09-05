@@ -27,7 +27,7 @@ void cbb_uart_dma_transfer_pause(cbb_uart_dma_buffer_t *buffer);
 void cbb_uart_dma_transfer_resume(cbb_uart_dma_buffer_t *buffer, uint16_t new_length, uint16_t increment_length, bool blocking, bool called_from_isr);
 void cbb_uart_dma_transfer_start(cbb_uart_dma_buffer_t *buffer, uint16_t length, bool blocking, bool called_from_isr);
 
-cbb_uart_dma_buffer_t *cbb_uart_dma_init(void)
+cbb_uart_dma_status_t *cbb_uart_dma_init(cbb_uart_dma_buffer_t *buffer, cbb_uart_dma_callbacks_t callbacks)
 {
     __HAL_RCC_DMA1_CLK_ENABLE();
     LL_DMA_InitTypeDef dma_init     = { 0 };

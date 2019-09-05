@@ -1,31 +1,44 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.10)
 project(uart-dma C ASM)
-set(C_SOURCES
-	  src/system_stm32f4xx.c
-	  src/main.c
-	  src/gpio.c
-	  src/usart.c
-	  src/stm32f4xx_it.c
-	  src/stm32f4xx_hal_msp.c
-	  src/freertos.c
-	  src/cbb_uart_dma.c
-	  src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_hal.c
-    src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_hal_cortex.c
-	  src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_hal_rcc.c
-	  src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_hal_rcc_ex.c
-	  src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_hal_pwr.c
-	  src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_hal_gpio.c
-	  src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_hal_usart.c
-	  src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_hal_uart.c
-	  src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_ll_dma.c
-	  src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_ll_usart.c
-	  src/FreeRTOS/list.c
-	  src/FreeRTOS/queue.c
-	  src/FreeRTOS/tasks.c
-	  src/FreeRTOS/CMSIS_RTOS/cmsis_os.c
-	  src/FreeRTOS/portable/GCC/ARM_CM4F/port.c)
-set(ASM_SOURCES src/startup_stm32f411xe.s)
 
+set(PORTS_DIR "${PROJECT_SOURCE_DIR}/port")
+
+if(NOT DEFINED MCU_PORT)
+	message(FATAL_ERROR "Please define a MCU_PORT ${MCU_PORT} to use.")
+endif()
+
+if(NOT EXISTS "${PORTS_DIR}/MCU/${MCU_PORT}")
+	message(FATAL_ERROR "Directory for port '${MCU_PORT}' does not exist in ${PORTS_DIR}/MCU")
+endif()
+
+set(C_SOURCES src/cbb_uart_dma.c)
+
+
+#set(C_SOURCES
+#	  src/system_stm32f4xx.c
+#	  src/main.c
+#	  src/gpio.c
+#	  src/usart.c
+#	  src/stm32f4xx_it.c
+#	  src/stm32f4xx_hal_msp.c
+#	  src/freertos.c
+#	  src/cbb_uart_dma.c
+#	  src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_hal.c
+#      src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_hal_cortex.c
+#	  src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_hal_rcc.c
+#	  src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_hal_rcc_ex.c
+#	  src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_hal_pwr.c
+#	  src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_hal_gpio.c
+#	  src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_hal_usart.c
+#	  src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_hal_uart.c
+#	  src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_ll_dma.c
+#	  src/drivers/STM32F4xx_HAL_Driver/stm32f4xx_ll_usart.c
+#	  src/FreeRTOS/list.c
+#	  src/FreeRTOS/queue.c
+#	  src/FreeRTOS/tasks.c
+#	  src/FreeRTOS/CMSIS_RTOS/cmsis_os.c
+#	  src/FreeRTOS/portable/GCC/ARM_CM4F/port.c)
+#set(ASM_SOURCES src/startup_stm32f411xe.s)
 
 set(ARCH_FLAGS  -mcpu=cortex-m4
 				        -mthumb

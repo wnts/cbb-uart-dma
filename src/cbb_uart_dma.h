@@ -11,6 +11,27 @@
 #define CBB_UART_DMA_STREAM   LL_DMA_STREAM_6
 #define CBB_UART_DMA_CHANNEL  LL_DMA_CHANNEL_4
 
+typedef enum
+{
+    CBB_UART_DMA_OK,
+    CBB_UART_DMA_ERROR
+} cbb_uart_dma_status_t;
+
+typedef struct
+{
+    cbb_uart_dma_status_t (*dma_initialize)(void **dma_handle);
+    cbb_uart_dma_status_t (*uart_initialize)(void **uart_handle);
+    cbb_uart_dma_status_t (*dma_transfer_start)(void *dma_handle, void *src, void *dst, size_t size);
+    cbb_uart_dma_status_t (*dma_transfer_stop)(void *dma_handle);
+    cbb_uart_dma_status_t (*dma_transfer_remaining)(void *dma_handle);
+} cbb_uart_dma_callbacks_t;
+
+typedef enum
+{
+    CBB_UART_DMA_OK,
+    CBB_UART_DMA_ERROR
+} cbb_uart_dma_status_t;
+
 typedef struct
 {
     SemaphoreHandle_t mutex;
